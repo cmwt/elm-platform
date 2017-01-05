@@ -7,9 +7,10 @@ var tar = require("tar");
 var zlib = require("zlib");
 var mkdirp = require("mkdirp");
 var distDir = platform.distDir;
+var binariesDir = path.join(__dirname, "binaries");
 var shareReactorDir = platform.shareReactorDir;
 
-function checkBinariesPresent() {
+function replaceBinaries() {
   return Promise.all(
     platform.executables.map(function(executable) {
       var executablePath = platform.executablePaths[executable];
@@ -21,7 +22,16 @@ function checkBinariesPresent() {
           } else if (!stats.isFile()) {
             reject(executable + " was not a file.");
           } else {
-            resolve();
+            var dest = path.join(binariesDir, executable);
+
+            // Move the real executable to replace the bin script.
+            fs.rename(executablePath, dest, function(err) {
+              if (err) {
+                reject(err);
+              } else {
+                resolve();
+              }
+            });
           }
         });
       });
@@ -63,7 +73,7 @@ function downloadBinaries() {
                 "the files inside.");
           }
 
-          checkBinariesPresent().then(function() {
+          replaceBinaries().then(function() {
                 resolve("Successfully downloaded and processed " + filename);
               }, function(error) {
                 console.error("Error extracting executables...");
