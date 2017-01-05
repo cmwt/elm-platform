@@ -16,7 +16,7 @@
     "url": "https://github.com/rtfeldman"
   },
   "engines": {
-    "node": ">=0.10.0"
+    "node": ">=4.0.0"
   },
   "scripts": {
     "install": "node install.js"
@@ -46,9 +46,7 @@
     "elm-repl": "binaries/elm-repl"
   },
   "dependencies": {
-    "mkdirp": "0.5.1",
-    "promise": "7.1.1",
-    "tar": "2.2.1",
-    "request": "2.74.0"
+    "request": "2.79.0",
+    "tar": "2.2.1"
   }
 }
