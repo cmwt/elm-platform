@@ -33,7 +33,7 @@ function downloadBinaries() {
     // 'arm', 'ia32', or 'x64'.
     var arch = process.arch;
 
-    //'darwin', 'freebsd', 'linux', 'sunos' or 'win32'
+    // 'darwin', 'freebsd', 'linux', 'sunos' or 'win32'
     var operatingSystem = process.platform;
 
     var filename = operatingSystem + "-" + arch + ".tar.gz";
