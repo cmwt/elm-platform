@@ -23,7 +23,6 @@
   },
   "files": [
     "install.js",
-    "platform.js",
     "binaries"
   ],
   "keywords": [
@@ -46,7 +45,6 @@
     "elm-repl": "binaries/elm-repl"
   },
   "dependencies": {
-    "request": "2.79.0",
-    "tar": "2.2.1"
+    "binstall": "1.0.0"
   }
 }

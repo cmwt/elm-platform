@@ -1,82 +1,60 @@
+var binstall = require("binstall");
 var path = require("path");
-var platform = require(path.join(__dirname, "platform"));
 var fs = require("fs");
-var request = require("request");
-var tar = require("tar");
-var zlib = require("zlib");
-var distDir = platform.distDir;
+var packageInfo = require(path.join(__dirname, "package.json"));
+
+// Use major.minor.patch from version string - e.g. "1.2.3" from "1.2.3-alpha"
+var binVersion = packageInfo.version.replace(/^(\d+\.\d+\.\d+).*$/, "$1");
+
+// 'arm', 'ia32', or 'x64'.
+var arch = process.arch;
+
+// 'darwin', 'freebsd', 'linux', 'sunos' or 'win32'
+var operatingSystem = process.platform;
+
+var filename = operatingSystem + "-" + arch + ".tar.gz";
+var url = "https://dl.bintray.com/elmlang/elm-platform/"
+  + binVersion + "/" + filename;
+
 var binariesDir = path.join(__dirname, "binaries");
-var shareReactorDir = platform.shareReactorDir;
 
-function checkBinariesPresent() {
-  return Promise.all(
-    platform.executables.map(function(executable) {
-      var executablePath = platform.executablePaths[executable];
+binstall(url, {path: binariesDir, strip: 1}, {verbose: true})
+  .then(checkBinariesPresent).then(function(successMessage) {
+    console.log(successMessage);
+  }, function(errorMessage) {
+    console.error(errorMessage);
+    process.exit(1);
+  });
 
-      return new Promise(function(resolve, reject) {
-        fs.stat(executablePath, function(err, stats) {
-          if (err) {
-            reject(executable + " was not found.");
-          } else if (!stats.isFile()) {
-            reject(executable + " was not a file.");
-          } else {
-            resolve();
-          }
-        });
-      });
-    })
-  );
-}
+var packageInfo = require(path.join(__dirname, "package.json"));
+var executables = Object.keys(packageInfo.bin);
+var binaryExtension = process.platform === "win32" ? ".exe" : "";
+var executablePaths = {};
 
-function downloadBinaries() {
+executables.forEach(function(executable) {
+  executablePaths[executable] = path.join(binariesDir, executable + binaryExtension);
+});
+
+function checkBinariesPresent(successMessage) {
   return new Promise(function(resolve, reject) {
-    // 'arm', 'ia32', or 'x64'.
-    var arch = process.arch;
+    Promise.all(
+      executables.map(function(executable) {
+        var executablePath = executablePaths[executable];
 
-    // 'darwin', 'freebsd', 'linux', 'sunos' or 'win32'
-    var operatingSystem = process.platform;
-
-    var filename = operatingSystem + "-" + arch + ".tar.gz";
-    var url = "https://dl.bintray.com/elmlang/elm-platform/"
-      + platform.elmVersion + "/" + filename;
-
-    var untar = tar.Extract({path: path.join(__dirname, "binaries"), strip: 1})
-        .on("error", function(error) {
-          reject("Error extracting " + filename + " - " + error);
-        })
-        .on("end", function() {
-          resolve("Successfully downloaded and processed " + filename);
+        return new Promise(function(resolve, reject) {
+          fs.stat(executablePath, function(err, stats) {
+            if (err) {
+              reject(executable + " was not found.");
+            } else if (!stats.isFile()) {
+              reject(executable + " was not a file.");
+            } else {
+              resolve();
+            }
+          });
         });
-
-    var gunzip = zlib.createGunzip()
-        .on("error", function(error) {
-          reject("Error decompressing " + filename + " " + error);
-        });
-
-    request.get(url, function(error, response) {
-      if(error) {
-        reject("Error communicating with URL " + url + " " + error);
-        return;
-      }
-      if (response.statusCode == 404) {
-        reject("Unfortunately, there are currently no Elm Platform binaries available for your operating system and architecture.\n\nIf you would like to build Elm from source, there are instructions at https://github.com/elm-lang/elm-platform#build-from-source\n");
-        return;
-      }
-
-      console.log("Downloading Elm binaries from " + url);
-
-      response.on("error", function(error) {
-        reject("Error receiving " + url);
-      });
-    }).pipe(gunzip).pipe(untar);
+      })
+    ).then(function() {
+      resolve(successMessage);
+    }).catch(reject);
   });
 }
-
-downloadBinaries().then(function(successMessages) {
-  successMessages.forEach(function(message) {
-    console.log(message);
-  })
-}, function(errorMsg) {
-  console.error(errorMsg);
-  process.exit(1);
-});
