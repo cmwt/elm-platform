@@ -17,44 +17,16 @@ var url = "https://dl.bintray.com/elmlang/elm-platform/"
   + binVersion + "/" + filename;
 
 var binariesDir = path.join(__dirname, "binaries");
+var packageInfo = require(path.join(__dirname, "package.json"));
+var binaryExtension = process.platform === "win32" ? ".exe" : "";
+var executablePaths = Object.keys(packageInfo.bin).map(function(executable) {
+  return path.join(binariesDir, executable + binaryExtension);
+});
 
-binstall(url, {path: binariesDir, strip: 1}, {verbose: true})
-  .then(checkBinariesPresent).then(function(successMessage) {
+binstall(url, {path: binariesDir, strip: 1}, {verbose: true, verify: executablePaths})
+  .then(function(successMessage) {
     console.log(successMessage);
   }, function(errorMessage) {
     console.error(errorMessage);
     process.exit(1);
   });
-
-var packageInfo = require(path.join(__dirname, "package.json"));
-var executables = Object.keys(packageInfo.bin);
-var binaryExtension = process.platform === "win32" ? ".exe" : "";
-var executablePaths = {};
-
-executables.forEach(function(executable) {
-  executablePaths[executable] = path.join(binariesDir, executable + binaryExtension);
-});
-
-function checkBinariesPresent(successMessage) {
-  return new Promise(function(resolve, reject) {
-    Promise.all(
-      executables.map(function(executable) {
-        var executablePath = executablePaths[executable];
-
-        return new Promise(function(resolve, reject) {
-          fs.stat(executablePath, function(err, stats) {
-            if (err) {
-              reject(executable + " was not found.");
-            } else if (!stats.isFile()) {
-              reject(executable + " was not a file.");
-            } else {
-              resolve();
-            }
-          });
-        });
-      })
-    ).then(function() {
-      resolve(successMessage);
-    }).catch(reject);
-  });
-}
