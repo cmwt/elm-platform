@@ -45,6 +45,6 @@
     "elm-repl": "binaries/elm-repl"
   },
   "dependencies": {
-    "binstall": "1.1.0"
+    "binstall": "1.2.0"
   }
 }

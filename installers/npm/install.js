@@ -22,9 +22,11 @@ var binaryExtension = process.platform === "win32" ? ".exe" : "";
 var executablePaths = Object.keys(packageInfo.bin).map(function(executable) {
   return path.join(binariesDir, executable + binaryExtension);
 });
+var errorMessage = "Unfortunately, there are no Elm Platform " + binVersion + " binaries available for your operating system and architecture.\n\nIf you would like to build Elm from source, there are instructions at https://github.com/elm-lang/elm-platform#build-from-source\n";
 
-binstall(url, {path: binariesDir, strip: 1}, {verbose: true, verify: executablePaths})
-  .then(function(successMessage) {
+binstall(url, {path: binariesDir, strip: 1},
+  {verbose: true, verify: executablePaths, errorMessage: errorMessage}
+).then(function(successMessage) {
     console.log(successMessage);
   }, function(errorMessage) {
     console.error(errorMessage);
